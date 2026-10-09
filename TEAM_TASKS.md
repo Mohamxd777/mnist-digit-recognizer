@@ -12,17 +12,17 @@ To prevent merge conflicts, each student owns dedicated files and functions with
 
 | Member & GitHub Handle | Assigned Git Branch | Primary Code Ownership | Key Deliverables & Report Ownership |
 | :--- | :--- | :--- | :--- |
-| **@abuelmagd2oo5-svg** (ML) | `student-1-data-classical` | `src/data_loader.py`<br>`src/train_classical.py` | Deliverable 1 (Data Preprocessing pipeline) + Classical ML modeling (SVM / Random Forest) + Deliverable 3 Section 1 & 2.1 |
-| **@M0L0TFY** (NN) | `student-2-mlp` | `src/train_mlp.py` | Multilayer Perceptron (MLP) Architecture (Dense layers only) + Systematic Hyperparameter Exploration + Deliverable 3 Section 2.2 |
-| **@Mohamxd777** (DL) | `student-3-cnn-eval` | `src/train_cnn.py`<br>`src/evaluate_models.py` | Simple Introductory CNN + Comparative Evaluation Framework (Accuracy, F1, Latency, Complexity) + Deliverable 3 Section 2.3 & 3 |
-| **@saraasawy** (Frontend & Integration) | `student-4-streamlit-ui` | `src/image_utils.py`<br>`app.py` | Canvas Image Preprocessing (bounding box, centering, 28x28) + Streamlit Web UI + Joining Front and Back together + Deliverable 4 & 5 |
+| **@abuelmagd2oo5-svg** (ML) | `abuelmagd2oo5-svg-ml` | `src/data_loader.py`<br>`src/train_classical.py` | Deliverable 1 (Data Preprocessing pipeline) + Classical ML modeling (SVM / Random Forest) + Deliverable 3 Section 1 & 2.1 |
+| **@M0L0TFY** (NN) | `M0L0TFY-nn` | `src/train_mlp.py` | Multilayer Perceptron (MLP) Architecture (Dense layers only) + Systematic Hyperparameter Exploration + Deliverable 3 Section 2.2 |
+| **@Mohamxd777** (DL) | `Mohamxd777-dl` | `src/train_cnn.py`<br>`src/evaluate_models.py` | Simple Introductory CNN + Comparative Evaluation Framework (Accuracy, F1, Latency, Complexity) + Deliverable 3 Section 2.3 & 3 |
+| **@saraasawy** (Frontend & Integration) | `saraasawy-frontend` | `src/image_utils.py`<br>`app.py` | Canvas Image Preprocessing (bounding box, centering, 28x28) + Streamlit Web UI + Joining Front and Back together + Deliverable 4 & 5 |
 
 ---
 
 ## 📌 Student-by-Student Detailed Breakdown
 
 ### 🧑‍💻 @abuelmagd2oo5-svg: Data Preprocessing & Classical ML Specialist (ML)
-- **Assigned Branch:** `student-1-data-classical`
+- **Assigned Branch:** `abuelmagd2oo5-svg-ml`
 - **Files Owned:**
   - `src/data_loader.py`
   - `src/train_classical.py`
@@ -43,7 +43,7 @@ To prevent merge conflicts, each student owns dedicated files and functions with
 ---
 
 ### 🧑‍💻 @M0L0TFY: Multilayer Perceptron (MLP) Specialist (NN)
-- **Assigned Branch:** `student-2-mlp`
+- **Assigned Branch:** `M0L0TFY-nn`
 - **Files Owned:**
   - `src/train_mlp.py`
 - **Key Tasks:**
@@ -65,7 +65,7 @@ To prevent merge conflicts, each student owns dedicated files and functions with
 ---
 
 ### 🧑‍💻 @Mohamxd777: CNN & Evaluation Framework Specialist (DL)
-- **Assigned Branch:** `student-3-cnn-eval`
+- **Assigned Branch:** `Mohamxd777-dl`
 - **Files Owned:**
   - `src/train_cnn.py`
   - `src/evaluate_models.py`
@@ -91,7 +91,7 @@ To prevent merge conflicts, each student owns dedicated files and functions with
 ---
 
 ### 🧑‍💻 @saraasawy: Frontend, UI & Full-Stack Integration Specialist
-- **Assigned Branch:** `student-4-streamlit-ui`
+- **Assigned Branch:** `saraasawy-frontend`
 - **Files Owned:**
   - `src/image_utils.py`
   - `app.py`
@@ -123,17 +123,17 @@ Because each student modifies distinct files, merging back into `main` will be c
 
 ### Step 1: Switch to Your Isolated Feature Branch
 ```bash
-# Student 1:
-git checkout student-1-data-classical
+# @abuelmagd2oo5-svg (ML):
+git checkout abuelmagd2oo5-svg-ml
 
-# Student 2:
-git checkout student-2-mlp
+# @M0L0TFY (NN):
+git checkout M0L0TFY-nn
 
-# Student 3:
-git checkout student-3-cnn-eval
+# @Mohamxd777 (DL):
+git checkout Mohamxd777-dl
 
-# Student 4:
-git checkout student-4-streamlit-ui
+# @saraasawy (Frontend):
+git checkout saraasawy-frontend
 ```
 
 ### Step 2: Work, Stage, and Commit Locally

@@ -133,11 +133,11 @@ streamlit run app.py
 
 ## 🌿 Team Collaboration & Git Feature Branches
 
-To ensure zero merge conflicts, 4 isolated branches were created off `main`:
-1. `student-1-data-classical` (Student 1: `data_loader.py`, `train_classical.py`)
-2. `student-2-mlp` (Student 2: `train_mlp.py`)
-3. `student-3-cnn-eval` (Student 3: `train_cnn.py`, `evaluate_models.py`)
-4. `student-4-streamlit-ui` (Student 4: `image_utils.py`, `app.py`)
+To ensure zero merge conflicts, 4 isolated branches were created off `main` for each team member:
+1. `abuelmagd2oo5-svg-ml` (@abuelmagd2oo5-svg: `data_loader.py`, `train_classical.py`)
+2. `M0L0TFY-nn` (@M0L0TFY: `train_mlp.py`)
+3. `Mohamxd777-dl` (@Mohamxd777: `train_cnn.py`, `evaluate_models.py`)
+4. `saraasawy-frontend` (@saraasawy: `image_utils.py`, `app.py`)
 
 For branch guidelines, pull request protocols, and report distribution, consult [TEAM_TASKS.md](TEAM_TASKS.md).  
 For the report deliverable structure, refer to [REPORT_TEMPLATE.md](REPORT_TEMPLATE.md).

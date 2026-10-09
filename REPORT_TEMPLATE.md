@@ -130,7 +130,7 @@ Evaluate the models across competing engineering dimensions:
 
 | Team Member | Sub-branch | Primary Contributions | Percentage Effort |
 | :--- | :--- | :--- | :--- |
-| **@abuelmagd2oo5-svg** (ML) | `student-1-data-classical` | Implemented data loader, normalization, classical ML (SVM/RF), GridSearchCV | 25% |
-| **@M0L0TFY** (NN) | `student-2-mlp` | Implemented Dense-only MLP, hyperparameter grid search, validation curves | 25% |
-| **@Mohamxd777** (DL) | `student-3-cnn-eval` | Implemented introductory CNN, unified evaluation suite, metrics exporter | 25% |
-| **@saraasawy** (Frontend & Integration) | `student-4-streamlit-ui` | Implemented canvas preprocessing, center-of-mass centering, Streamlit UI app, joining front & back | 25% |
+| **@abuelmagd2oo5-svg** (ML) | `abuelmagd2oo5-svg-ml` | Implemented data loader, normalization, classical ML (SVM/RF), GridSearchCV | 25% |
+| **@M0L0TFY** (NN) | `M0L0TFY-nn` | Implemented Dense-only MLP, hyperparameter grid search, validation curves | 25% |
+| **@Mohamxd777** (DL) | `Mohamxd777-dl` | Implemented introductory CNN, unified evaluation suite, metrics exporter | 25% |
+| **@saraasawy** (Frontend & Integration) | `saraasawy-frontend` | Implemented canvas preprocessing, center-of-mass centering, Streamlit UI app, joining front & back | 25% |
