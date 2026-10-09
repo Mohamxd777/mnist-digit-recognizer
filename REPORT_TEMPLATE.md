@@ -2,11 +2,11 @@
 
 **Course:** Machine Learning & Deep Learning  
 **Assignment:** Assignment 1 — Training Models on MNIST + Interactive Drawing App  
-**Team Members:**  
-- Student 1: `[Name / Student ID]` — Data Loading & Classical Machine Learning  
-- Student 2: `[Name / Student ID]` — Multilayer Perceptron (MLP) Modeling  
-- Student 3: `[Name / Student ID]` — Convolutional Neural Network (CNN) & Model Evaluation  
-- Student 4: `[Name / Student ID]` — Image Preprocessing & Streamlit UI Application  
+**Team Members & Roles:**  
+- **@abuelmagd2oo5-svg** (ML) — Data Loading & Classical Machine Learning (SVM / Random Forest)  
+- **@M0L0TFY** (NN) — Multilayer Perceptron (MLP) Modeling (Dense Layers)  
+- **@Mohamxd777** (DL) — Convolutional Neural Network (CNN) & Cross-Model Evaluation Suite  
+- **@saraasawy** (Frontend & Integration) — Image Preprocessing, Streamlit UI & Full-Stack Integration  
 **Date:** `[Submission Date]`  
 
 ---
@@ -130,7 +130,7 @@ Evaluate the models across competing engineering dimensions:
 
 | Team Member | Sub-branch | Primary Contributions | Percentage Effort |
 | :--- | :--- | :--- | :--- |
-| **Student 1** | `student-1-data-classical` | Implemented data loader, normalization, classical ML (SVM/RF), GridSearchCV | 25% |
-| **Student 2** | `student-2-mlp` | Implemented Dense-only MLP, hyperparameter grid search, validation curves | 25% |
-| **Student 3** | `student-3-cnn-eval` | Implemented introductory CNN, unified evaluation suite, metrics exporter | 25% |
-| **Student 4** | `student-4-streamlit-ui` | Implemented canvas preprocessing, center-of-mass centering, Streamlit UI app | 25% |
+| **@abuelmagd2oo5-svg** (ML) | `student-1-data-classical` | Implemented data loader, normalization, classical ML (SVM/RF), GridSearchCV | 25% |
+| **@M0L0TFY** (NN) | `student-2-mlp` | Implemented Dense-only MLP, hyperparameter grid search, validation curves | 25% |
+| **@Mohamxd777** (DL) | `student-3-cnn-eval` | Implemented introductory CNN, unified evaluation suite, metrics exporter | 25% |
+| **@saraasawy** (Frontend & Integration) | `student-4-streamlit-ui` | Implemented canvas preprocessing, center-of-mass centering, Streamlit UI app, joining front & back | 25% |

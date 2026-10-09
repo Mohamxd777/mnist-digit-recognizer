@@ -10,18 +10,18 @@
 
 To prevent merge conflicts, each student owns dedicated files and functions within the codebase. The table below outlines ownership boundaries:
 
-| Student | Assigned Git Branch | Primary Code Ownership | Key Deliverables & Report Ownership |
+| Member & GitHub Handle | Assigned Git Branch | Primary Code Ownership | Key Deliverables & Report Ownership |
 | :--- | :--- | :--- | :--- |
-| **Student 1** | `student-1-data-classical` | `src/data_loader.py`<br>`src/train_classical.py` | Deliverable 1 (Data Preprocessing pipeline) + Classical ML modeling (SVM / Random Forest) + Deliverable 3 Section 1 & 2.1 |
-| **Student 2** | `student-2-mlp` | `src/train_mlp.py` | Multilayer Perceptron (MLP) Architecture (Dense layers only) + Systematic Hyperparameter Exploration + Deliverable 3 Section 2.2 |
-| **Student 3** | `student-3-cnn-eval` | `src/train_cnn.py`<br>`src/evaluate_models.py` | Simple Introductory CNN + Comparative Evaluation Framework (Accuracy, F1, Latency, Complexity) + Deliverable 3 Section 2.3 & 3 |
-| **Student 4** | `student-4-streamlit-ui` | `src/image_utils.py`<br>`app.py` | Canvas Image Preprocessing (bounding box, centering, 28x28) + Streamlit Web UI + Deliverable 4 & 5 (App Demo & Video/Screenshots) |
+| **@abuelmagd2oo5-svg** (ML) | `student-1-data-classical` | `src/data_loader.py`<br>`src/train_classical.py` | Deliverable 1 (Data Preprocessing pipeline) + Classical ML modeling (SVM / Random Forest) + Deliverable 3 Section 1 & 2.1 |
+| **@M0L0TFY** (NN) | `student-2-mlp` | `src/train_mlp.py` | Multilayer Perceptron (MLP) Architecture (Dense layers only) + Systematic Hyperparameter Exploration + Deliverable 3 Section 2.2 |
+| **@Mohamxd777** (DL) | `student-3-cnn-eval` | `src/train_cnn.py`<br>`src/evaluate_models.py` | Simple Introductory CNN + Comparative Evaluation Framework (Accuracy, F1, Latency, Complexity) + Deliverable 3 Section 2.3 & 3 |
+| **@saraasawy** (Frontend & Integration) | `student-4-streamlit-ui` | `src/image_utils.py`<br>`app.py` | Canvas Image Preprocessing (bounding box, centering, 28x28) + Streamlit Web UI + Joining Front and Back together + Deliverable 4 & 5 |
 
 ---
 
 ## 📌 Student-by-Student Detailed Breakdown
 
-### 🧑‍💻 Student 1: Data Preprocessing & Classical ML Specialist
+### 🧑‍💻 @abuelmagd2oo5-svg: Data Preprocessing & Classical ML Specialist (ML)
 - **Assigned Branch:** `student-1-data-classical`
 - **Files Owned:**
   - `src/data_loader.py`
@@ -42,7 +42,7 @@ To prevent merge conflicts, each student owns dedicated files and functions with
 
 ---
 
-### 🧑‍💻 Student 2: Multilayer Perceptron (MLP) Specialist
+### 🧑‍💻 @M0L0TFY: Multilayer Perceptron (MLP) Specialist (NN)
 - **Assigned Branch:** `student-2-mlp`
 - **Files Owned:**
   - `src/train_mlp.py`
@@ -64,7 +64,7 @@ To prevent merge conflicts, each student owns dedicated files and functions with
 
 ---
 
-### 🧑‍💻 Student 3: CNN & Evaluation Framework Specialist
+### 🧑‍💻 @Mohamxd777: CNN & Evaluation Framework Specialist (DL)
 - **Assigned Branch:** `student-3-cnn-eval`
 - **Files Owned:**
   - `src/train_cnn.py`
@@ -90,7 +90,7 @@ To prevent merge conflicts, each student owns dedicated files and functions with
 
 ---
 
-### 🧑‍💻 Student 4: Image Processing & Streamlit Application Specialist
+### 🧑‍💻 @saraasawy: Frontend, UI & Full-Stack Integration Specialist
 - **Assigned Branch:** `student-4-streamlit-ui`
 - **Files Owned:**
   - `src/image_utils.py`
@@ -104,7 +104,8 @@ To prevent merge conflicts, each student owns dedicated files and functions with
        - Center the 20x20 image inside a 28x28 bounding frame (using center-of-mass shift).
        - Normalize pixel intensities to $[0.0, 1.0]$.
        - Return formatted tensors for both `(1, 784)` and `(1, 28, 28, 1)`.
-  2. **Streamlit Web Application (`app.py`):**
+  2. **Streamlit Web Application & Full-Stack Integration (`app.py`):**
+     - Join frontend canvas drawing with backend model inference.
      - Interactive drawing board using `streamlit-drawable-canvas` (`st_canvas`).
      - Controls: Brush stroke width slider, "Clear Canvas" button.
      - Dropdown selector to choose between the 3 models (Classical ML, MLP, CNN).
