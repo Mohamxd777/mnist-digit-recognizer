@@ -22,6 +22,7 @@ def load_mnist(
     flatten: bool = False,
     normalize: bool = True,
     val_split: float = 0.1,
+    test_split: Optional[float] = None,
     random_state: int = 42,
     subset_size: Optional[int] = None,
 ) -> Tuple[
@@ -41,6 +42,9 @@ def load_mnist(
         If True, scales pixel values from [0, 255] to [0.0, 1.0] as float32.
     val_split : float, default=0.1
         Fraction of the training set to reserve for validation (e.g., 0.1 = 10%).
+    test_split : Optional[float], default=None
+        If specified (e.g. 0.3 for 70/30 split), combines all 70,000 MNIST images
+        and splits into (1.0 - test_split) train pool and test_split test set.
     random_state : int, default=42
         Random seed for reproducible train-validation splitting.
     subset_size : Optional[int], default=None
@@ -67,6 +71,18 @@ def load_mnist(
         y = mnist_openml.target.astype(np.uint8)
         x_train_raw, x_test_raw = X[:60000], X[60000:]
         y_train_raw, y_test_raw = y[:60000], y[60000:]
+
+    # Custom train/test split if requested (e.g. 70/30 split across all 70k samples)
+    if test_split is not None:
+        X_all = np.concatenate([x_train_raw, x_test_raw], axis=0)
+        y_all = np.concatenate([y_train_raw, y_test_raw], axis=0)
+        x_train_raw, x_test_raw, y_train_raw, y_test_raw = train_test_split(
+            X_all,
+            y_all,
+            test_size=test_split,
+            random_state=random_state,
+            stratify=y_all,
+        )
 
     # Optional subset truncation for fast hyperparameter grid sweeps
     if subset_size is not None and subset_size < len(x_train_raw):

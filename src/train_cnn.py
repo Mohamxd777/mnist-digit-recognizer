@@ -124,6 +124,7 @@ def train_cnn_model(
     epochs: int = 15,
     batch_size: int = 128,
     learning_rate: float = 0.001,
+    test_split: float = 0.30,
     output_dir: str = "saved_models",
 ) -> Dict[str, Any]:
     """
@@ -145,6 +146,8 @@ def train_cnn_model(
         Batch size.
     learning_rate : float
         Optimizer learning rate.
+    test_split : float
+        Test set fraction (e.g. 0.30 for 70/30 train-test split).
     output_dir : str
         Directory to save models and metrics.
 
@@ -156,12 +159,13 @@ def train_cnn_model(
     os.makedirs(output_dir, exist_ok=True)
     print(f"\n==================================================")
     print(f"  Training Introductory CNN Model (Student 3)")
+    print(f"  Dataset Partition: {int((1 - test_split)*100)}% Train / {int(test_split*100)}% Test")
     print(f"==================================================")
 
-    # 1. Load data with shape (N, 28, 28, 1)
-    print("[1/4] Loading MNIST spatial channel data (N, 28, 28, 1)...")
+    # 1. Load data with shape (N, 28, 28, 1) and custom 70/30 split
+    print(f"[1/4] Loading MNIST spatial channel data with {int(test_split*100)}% test split...")
     (X_train, y_train), (X_val, y_val), (X_test, y_test) = load_mnist(
-        flatten=False, normalize=True, val_split=0.1
+        flatten=False, normalize=True, val_split=0.1, test_split=test_split
     )
     print(f"      Train: {X_train.shape} | Val: {X_val.shape} | Test: {X_test.shape}")
 
@@ -316,6 +320,12 @@ if __name__ == "__main__":
         default=0.001,
         help="Learning rate",
     )
+    parser.add_argument(
+        "--test-split",
+        type=float,
+        default=0.30,
+        help="Test set fraction (default: 0.30 for 70/30 split)",
+    )
     args = parser.parse_args()
 
     train_cnn_model(
@@ -326,4 +336,5 @@ if __name__ == "__main__":
         epochs=args.epochs,
         batch_size=args.batch_size,
         learning_rate=args.lr,
+        test_split=args.test_split,
     )

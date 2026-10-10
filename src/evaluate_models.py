@@ -66,19 +66,21 @@ def benchmark_model_inference(
     return float(np.mean(latencies))
 
 
-def evaluate_all_models(models_dir: str = "saved_models") -> pd.DataFrame:
+def evaluate_all_models(models_dir: str = "saved_models", test_split: Optional[float] = 0.30) -> pd.DataFrame:
     """
     Loads saved models and metrics, calculates uniform benchmarks,
     and returns a comparison summary DataFrame.
     """
     print(f"\n==================================================")
     print(f"  Cross-Model Benchmark & Evaluation (Student 3)")
+    if test_split is not None:
+        print(f"  Evaluation Split: {int((1 - test_split)*100)}% Train / {int(test_split*100)}% Test")
     print(f"==================================================")
 
     # 1. Load MNIST Test Set in both modalities
     print("[1/4] Loading test datasets...")
-    (_, _), (_, _), (X_test_flat, y_test) = load_mnist(flatten=True, normalize=True)
-    (_, _), (_, _), (X_test_cnn, _) = load_mnist(flatten=False, normalize=True)
+    (_, _), (_, _), (X_test_flat, y_test) = load_mnist(flatten=True, normalize=True, test_split=test_split)
+    (_, _), (_, _), (X_test_cnn, _) = load_mnist(flatten=False, normalize=True, test_split=test_split)
     print(f"      Evaluated on {len(y_test):,} MNIST test samples.")
 
     # Benchmark subset for latency calculation (1,000 samples for high-precision timing)

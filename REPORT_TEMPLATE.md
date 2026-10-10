@@ -93,12 +93,12 @@ Discuss how the interactive drawing canvas in Streamlit transforms freehand user
 
 | Evaluation Metric | Classical ML (SVM / RF) | Multilayer Perceptron (MLP) | Convolutional Neural Network (CNN) |
 | :--- | :--- | :--- | :--- |
-| **Test Accuracy (%)** | `XX.XX%` | `XX.XX%` | `99.32%` |
-| **Macro F1-Score** | `0.XXXX` | `0.XXXX` | `0.9931` |
-| **Macro Precision** | `0.XXXX` | `0.XXXX` | `0.9931` |
-| **Macro Recall** | `0.XXXX` | `0.XXXX` | `0.9931` |
-| **Training Duration (s)**| `XX.X s` | `XX.X s` | `100.1 s` |
-| **Inference Latency (ms/sample)** | `X.XX ms` | `X.XX ms` | `0.17 ms` |
+| **Test Accuracy (%)** | `XX.XX%` | `XX.XX%` | `99.09%` (70/30 split) |
+| **Macro F1-Score** | `0.XXXX` | `0.XXXX` | `0.9909` |
+| **Macro Precision** | `0.XXXX` | `0.XXXX` | `0.9909` |
+| **Macro Recall** | `0.XXXX` | `0.XXXX` | `0.9908` |
+| **Training Duration (s)**| `XX.X s` | `XX.X s` | `76.1 s` |
+| **Inference Latency (ms/sample)** | `X.XX ms` | `X.XX ms` | `0.13 ms` |
 | **Trainable Parameters** | `N/A` | `XXX,XXX` | `421,642` |
 | **Model Disk Size (MB)** | `XX.X MB` | `X.X MB` | `4.86 MB` |
 
