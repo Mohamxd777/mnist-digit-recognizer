@@ -218,6 +218,8 @@ with col_results:
 
             if meta.get("status") in ["blank_canvas", "no_contour", "empty_input"]:
                 st.warning("⚠️ Canvas appears to be blank. Please draw a digit clearly!")
+            elif meta.get("status") == "too_small":
+                st.warning("⚠️ That looks like just a dot or a speck! Please draw a full digit (0 – 9).")
             else:
                 # 1. Load the active model
                 model = None

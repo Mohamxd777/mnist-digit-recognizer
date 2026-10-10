@@ -75,6 +75,18 @@ def preprocess_canvas_image(
         return None, None, None, {"status": "no_contour"}
 
     x, y, w, h = cv2.boundingRect(coords)
+
+    # Filter out tiny specks, dots, or accidental single clicks
+    # A real handwritten digit on a 280x280 canvas must have sufficient stroke span and area
+    stroke_pixel_count = int(np.count_nonzero(gray > threshold))
+    if (w < 20 and h < 20) or stroke_pixel_count < 100:
+        return None, None, None, {
+            "status": "too_small",
+            "message": "Drawing is too small or appears to be just a dot. Please draw a complete digit.",
+            "bounding_box": {"x": int(x), "y": int(y), "w": int(w), "h": int(h)},
+            "pixel_count": stroke_pixel_count,
+        }
+
     digit_crop = gray[y : y + h, x : x + w]
 
     # 4. Aspect-ratio Preserved Resize to fit in 20x20 box (standard MNIST procedure)
