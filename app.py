@@ -9,6 +9,7 @@ choose between trained models (Classical ML, MLP, CNN), and visualize
 model prediction confidences across classes 0-9.
 """
 
+import inspect
 import os
 import sys
 from pathlib import Path
@@ -161,16 +162,23 @@ with col_canvas:
             st.rerun()
 
     # Drawable Canvas Component
-    canvas_result = st_canvas(
-        fill_color="rgba(0, 0, 0, 0)",
-        stroke_width=stroke_width,
-        stroke_color="#FFFFFF",
-        background_color="#000000",
-        height=280,
-        width=280,
-        drawing_mode="freedraw",
-        key=f"canvas_{st.session_state.canvas_key}",
-    )
+    canvas_kwargs = {
+        "fill_color": "rgba(0, 0, 0, 0)",
+        "stroke_width": stroke_width,
+        "stroke_color": "#FFFFFF",
+        "background_color": "#000000",
+        "height": 280,
+        "width": 280,
+        "drawing_mode": "freedraw",
+        "key": f"canvas_{st.session_state.canvas_key}",
+    }
+    try:
+        if "return_image_data" in inspect.signature(st_canvas).parameters:
+            canvas_kwargs["return_image_data"] = True
+    except Exception:
+        pass
+
+    canvas_result = st_canvas(**canvas_kwargs)
 
 with col_results:
     st.subheader("Prediction & Confidence")
@@ -179,12 +187,19 @@ with col_results:
         predict_clicked = st.button("🚀 Predict Digit", type="primary", use_container_width=True)
 
     if predict_clicked:
-        if canvas_result.image_data is None:
+        raw_image = None
+        if canvas_result is not None:
+            try:
+                raw_image = canvas_result.image_data
+            except Exception:
+                raw_image = None
+
+        if raw_image is None:
             st.warning("Canvas is empty. Please draw a digit first.")
         else:
             # Preprocess the canvas drawing using Student 4 pipeline
             flat_tensor, cnn_tensor, img2d, meta = preprocess_canvas_image(
-                canvas_result.image_data
+                raw_image
             )
 
             if meta.get("status") in ["blank_canvas", "no_contour", "empty_input"]:
