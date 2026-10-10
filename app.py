@@ -311,6 +311,8 @@ with col_results:
 
                         pred_digit = int(np.argmax(probabilities))
                         model_acc_str = get_model_accuracy(model_choice)
+                        top_indices = np.argsort(probabilities)[::-1][:3]
+                        top_probs = [(int(idx), float(probabilities[idx] * 100.0)) for idx in top_indices]
 
                     # 3. Display High-Level Result Card
                     res_col1, res_col2 = st.columns([1, 1])
@@ -320,9 +322,25 @@ with col_results:
                             <div class="pred-box">
                                 <div class="pred-label">PREDICTED DIGIT</div>
                                 <div class="pred-digit">{pred_digit}</div>
-                                <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.12);">
-                                    <div class="metric-sublabel">Model Test Accuracy</div>
-                                    <div class="metric-value-acc">{model_acc_str}</div>
+                                <div style="font-size: 1.25rem; font-weight: 700; color: #22c55e; margin: 4px 0 10px 0;">
+                                    {top_probs[0][1]:.1f}% Probability
+                                </div>
+                                <div style="padding: 10px 0; border-top: 1px solid rgba(255, 255, 255, 0.12); border-bottom: 1px solid rgba(255, 255, 255, 0.12);">
+                                    <div class="metric-sublabel" style="margin-bottom: 6px;">Top Candidate Guesses</div>
+                                    <div style="display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;">
+                                        <span style="background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #4ade80; padding: 2px 7px; border-radius: 6px; font-size: 0.8rem; font-weight: 700;">
+                                            #{1}: Digit {top_probs[0][0]} ({top_probs[0][1]:.1f}%)
+                                        </span>
+                                        <span style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; padding: 2px 7px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+                                            #{2}: Digit {top_probs[1][0]} ({top_probs[1][1]:.1f}%)
+                                        </span>
+                                        <span style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; padding: 2px 7px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+                                            #{3}: Digit {top_probs[2][0]} ({top_probs[2][1]:.1f}%)
+                                        </span>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 10px; font-size: 0.78rem; color: #94a3b8;">
+                                    Model Test Accuracy: <strong style="color: #38bdf8; font-size: 0.95rem;">{model_acc_str}</strong>
                                 </div>
                             </div>
                             """,
