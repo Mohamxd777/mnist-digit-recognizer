@@ -10,6 +10,7 @@ model prediction confidences across classes 0-9.
 """
 
 import inspect
+import json
 import os
 import sys
 from pathlib import Path
@@ -60,6 +61,27 @@ def load_cnn_model():
     return None
 
 
+@st.cache_data
+def get_model_accuracy(model_choice_name: str) -> str:
+    """Retrieves benchmark test accuracy for the selected model if available."""
+    metrics_map = {
+        "Classical ML (SVM / RF)": SAVED_MODELS_DIR / "classical_metrics.json",
+        "Multilayer Perceptron (MLP)": SAVED_MODELS_DIR / "mlp_metrics.json",
+        "Convolutional Neural Net (CNN)": SAVED_MODELS_DIR / "cnn_metrics.json",
+    }
+    path = metrics_map.get(model_choice_name)
+    if path and path.exists():
+        try:
+            with open(path, "r") as f:
+                data = json.load(f)
+                acc = data.get("test_accuracy")
+                if acc is not None:
+                    return f"{acc * 100:.2f}%"
+        except Exception:
+            pass
+    return "N/A"
+
+
 # --- Custom CSS Styling ---
 st.markdown(
     """
@@ -96,10 +118,36 @@ st.markdown(
         line-height: 1;
         margin: 10px 0;
     }
-    .pred-conf {
-        font-size: 1.1rem;
+    .metrics-row {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        gap: 10px;
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .metric-item {
+        flex: 1;
+        text-align: center;
+    }
+    .metric-sublabel {
+        font-size: 0.72rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #94a3b8;
         font-weight: 600;
-        color: #e2e8f0;
+        margin-bottom: 4px;
+    }
+    .metric-value-conf {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #22c55e;
+    }
+    .metric-value-acc {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #38bdf8;
     }
     .status-badge {
         display: inline-block;
@@ -261,6 +309,7 @@ with col_results:
 
                         pred_digit = int(np.argmax(probabilities))
                         confidence = float(probabilities[pred_digit])
+                        model_acc_str = get_model_accuracy(model_choice)
 
                     # 3. Display High-Level Result Card
                     res_col1, res_col2 = st.columns([1, 1])
@@ -270,13 +319,21 @@ with col_results:
                             <div class="pred-box">
                                 <div class="pred-label">PREDICTED DIGIT</div>
                                 <div class="pred-digit">{pred_digit}</div>
-                                <div class="pred-conf">
-                                    Confidence: <span style="color: #22c55e; font-weight: 700;">{confidence * 100:.1f}%</span>
+                                <div class="metrics-row">
+                                    <div class="metric-item">
+                                        <div class="metric-sublabel">Confidence</div>
+                                        <div class="metric-value-conf">{confidence * 100:.1f}%</div>
+                                    </div>
+                                    <div class="metric-item" style="border-left: 1px solid rgba(255, 255, 255, 0.15);">
+                                        <div class="metric-sublabel">Model Accuracy</div>
+                                        <div class="metric-value-acc">{model_acc_str}</div>
+                                    </div>
                                 </div>
                             </div>
                             """,
                             unsafe_allow_html=True,
                         )
+                        st.caption("ℹ️ **Confidence:** Certainty on this stroke • **Accuracy:** Test benchmark score.")
 
                     with res_col2:
                         st.caption("Normalized 28x28 Model Input:")
