@@ -1,0 +1,2 @@
+Model Name,Test Accuracy (%),Macro F1,Training Time (s),Inference Latency (ms/sample),Parameters,Disk Size (MB)
+Convolutional Neural Net (CNN),99.32,0.9931,100.13,0.1671,"421,642",4.86
