@@ -1,2 +1,4 @@
 Model Name,Test Accuracy (%),Macro F1,Training Time (s),Inference Latency (ms/sample),Parameters,Disk Size (MB)
-Convolutional Neural Net (CNN),99.09,0.9909,76.08,0.1307,"421,642",4.86
+Classical ML (SVM/RF),97.02,0.97,348.84,2.4627,N/A (Non-parametric/Trees),21.33
+Multilayer Perceptron (MLP),99.59,0.9959,195.73,0.1188,"571,018",6.57
+Convolutional Neural Net (CNN),99.09,0.9909,76.08,0.1587,"421,642",4.86
