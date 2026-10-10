@@ -75,17 +75,31 @@ st.markdown(
         margin-bottom: 1.5rem;
     }
     .pred-box {
-        background-color: #f8f9fa;
-        border-radius: 10px;
+        background-color: rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
         padding: 20px;
         text-align: center;
-        border: 2px solid #e9ecef;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .pred-label {
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #94a3b8;
+        font-weight: 600;
     }
     .pred-digit {
         font-size: 5rem;
         font-weight: 800;
-        color: #1f77b4;
+        color: #38bdf8;
         line-height: 1;
+        margin: 10px 0;
+    }
+    .pred-conf {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #e2e8f0;
     }
     .status-badge {
         display: inline-block;
@@ -155,7 +169,7 @@ with col_canvas:
     if "canvas_key" not in st.session_state:
         st.session_state.canvas_key = 0
 
-    col_btn_clear, col_btn_predict = st.columns([1, 2])
+    col_btn_clear, col_btn_predict = st.columns([1.2, 1.8])
     with col_btn_clear:
         if st.button("🗑️ Clear Canvas", use_container_width=True):
             st.session_state.canvas_key += 1
@@ -252,10 +266,10 @@ with col_results:
                         st.markdown(
                             f"""
                             <div class="pred-box">
-                                <div style="font-size: 0.9rem; color: #6c757d; font-weight: 600;">PREDICTED DIGIT</div>
+                                <div class="pred-label">PREDICTED DIGIT</div>
                                 <div class="pred-digit">{pred_digit}</div>
-                                <div style="font-size: 1.1rem; font-weight: 600; margin-top: 5px;">
-                                    Confidence: <span style="color: #28a745;">{confidence * 100:.1f}%</span>
+                                <div class="pred-conf">
+                                    Confidence: <span style="color: #22c55e; font-weight: 700;">{confidence * 100:.1f}%</span>
                                 </div>
                             </div>
                             """,
