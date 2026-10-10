@@ -67,7 +67,9 @@ def get_model_accuracy(model_choice_name: str) -> str:
     metrics_map = {
         "Classical ML (SVM / RF)": SAVED_MODELS_DIR / "classical_metrics.json",
         "Multilayer Perceptron (MLP)": SAVED_MODELS_DIR / "mlp_metrics.json",
+        "Convolutional Neural Network (CNN)": SAVED_MODELS_DIR / "cnn_metrics.json",
         "Convolutional Neural Net (CNN)": SAVED_MODELS_DIR / "cnn_metrics.json",
+        "CNN": SAVED_MODELS_DIR / "cnn_metrics.json",
     }
     path = metrics_map.get(model_choice_name)
     if path and path.exists():
