@@ -1,397 +1,373 @@
-"""
-app.py
-======
-Author: Student 4 (Streamlit UI & Preprocessing Specialist)
-Assignment 1: Training Models on MNIST + Interactive Drawing App (Deliverable 5)
+"""MNIST Digit Recognizer — refreshed Streamlit interface.
 
-An interactive web application allowing users to draw a digit in real-time,
-choose between trained models (Classical ML, MLP, CNN), and visualize
-model prediction confidences across classes 0-9.
+The existing preprocessing function and saved model artifacts are kept unchanged.
 """
 
 import inspect
 import json
-import os
 import sys
 from pathlib import Path
+
 import joblib
 import numpy as np
 import pandas as pd
 import streamlit as st
-from streamlit_drawable_canvas import st_canvas
 import tensorflow as tf
+from streamlit_drawable_canvas import st_canvas
 
-# Ensure root directory is on Python path
-sys.path.append(str(Path(__file__).resolve().parent))
+ROOT = Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
 from src.image_utils import preprocess_canvas_image
 
-# --- Page Configuration ---
 st.set_page_config(
     page_title="MNIST Digit Recognizer",
     page_icon="✏️",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
-SAVED_MODELS_DIR = Path(__file__).resolve().parent / "saved_models"
+SAVED_MODELS_DIR = ROOT / "saved_models"
 CLASSICAL_PATH = SAVED_MODELS_DIR / "classical_model.joblib"
 MLP_PATH = SAVED_MODELS_DIR / "mlp_model.keras"
 CNN_PATH = SAVED_MODELS_DIR / "cnn_model.keras"
 
+MODEL_NAMES = {
+    "CNN": "Convolutional Neural Network (CNN)",
+    "MLP": "Multilayer Perceptron (MLP)",
+    "Classical ML": "Classical ML (SVM / RF)",
+}
+SELECT_OPTIONS = list(MODEL_NAMES.values())
 
-# --- Model Loading Helpers with Caching ---
-@st.cache_resource
+# --- Load models once; errors are shown in the status area rather than crashing the app. ---
+@st.cache_resource(show_spinner=False)
 def load_classical_model():
-    if CLASSICAL_PATH.exists():
-        return joblib.load(CLASSICAL_PATH)
-    return None
+    return joblib.load(CLASSICAL_PATH) if CLASSICAL_PATH.exists() else None
 
 
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def load_mlp_model():
-    if MLP_PATH.exists():
-        return tf.keras.models.load_model(MLP_PATH)
-    return None
+    return tf.keras.models.load_model(MLP_PATH, compile=False) if MLP_PATH.exists() else None
 
 
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def load_cnn_model():
-    if CNN_PATH.exists():
-        return tf.keras.models.load_model(CNN_PATH)
-    return None
+    return tf.keras.models.load_model(CNN_PATH, compile=False) if CNN_PATH.exists() else None
 
 
-@st.cache_data
-def get_model_accuracy(model_choice_name: str) -> str:
-    """Retrieves benchmark test accuracy for the selected model if available."""
-    metrics_map = {
-        "Classical ML (SVM / RF)": SAVED_MODELS_DIR / "classical_metrics.json",
-        "Multilayer Perceptron (MLP)": SAVED_MODELS_DIR / "mlp_metrics.json",
-        "Convolutional Neural Network (CNN)": SAVED_MODELS_DIR / "cnn_metrics.json",
-        "Convolutional Neural Net (CNN)": SAVED_MODELS_DIR / "cnn_metrics.json",
-        "CNN": SAVED_MODELS_DIR / "cnn_metrics.json",
-    }
-    path = metrics_map.get(model_choice_name)
-    if path and path.exists():
-        try:
-            with open(path, "r") as f:
-                data = json.load(f)
-                acc = data.get("test_accuracy")
-                if acc is not None:
-                    return f"{acc * 100:.2f}%"
-        except Exception:
-            pass
-    return "N/A"
+@st.cache_data(show_spinner=False)
+def read_accuracy(filename: str):
+    path = SAVED_MODELS_DIR / filename
+    if not path.exists():
+        return None
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            value = json.load(f).get("test_accuracy")
+        return float(value) * 100 if value is not None else None
+    except (OSError, ValueError, TypeError):
+        return None
 
 
-# --- Custom CSS Styling ---
+def safe_load(loader):
+    try:
+        return loader(), None
+    except Exception as exc:
+        return None, f"{type(exc).__name__}: {exc}"
+
+
+def classical_probabilities(model, flat_tensor):
+    """Return ten probabilities, respecting a sklearn estimator's class order."""
+    if hasattr(model, "predict_proba"):
+        raw = np.asarray(model.predict_proba(flat_tensor)[0], dtype=float)
+        classes = getattr(model, "classes_", np.arange(len(raw)))
+        if hasattr(model, "named_steps") and not hasattr(model, "classes_"):
+            final_estimator = list(model.named_steps.values())[-1]
+            classes = getattr(final_estimator, "classes_", np.arange(len(raw)))
+        probs = np.zeros(10, dtype=float)
+        for i, cls in enumerate(classes):
+            try:
+                digit = int(cls)
+                if 0 <= digit <= 9 and i < len(raw):
+                    probs[digit] = raw[i]
+            except (ValueError, TypeError):
+                continue
+        total = probs.sum()
+        return probs / total if total > 0 else probs
+
+    prediction = int(np.asarray(model.predict(flat_tensor)).reshape(-1)[0])
+    probs = np.zeros(10, dtype=float)
+    if 0 <= prediction <= 9:
+        probs[prediction] = 1.0
+    return probs
+
+
+def run_prediction(key, models, flat_tensor, cnn_tensor):
+    model = models[key]
+    if model is None:
+        return {"available": False, "error": "Model file is missing or could not be loaded."}
+    try:
+        if key == "Classical ML":
+            probs = classical_probabilities(model, flat_tensor)
+        else:
+            model_input = cnn_tensor if key == "CNN" else flat_tensor
+            probs = np.asarray(model.predict(model_input, verbose=0)[0], dtype=float).reshape(-1)
+            if probs.size != 10:
+                return {"available": False, "error": f"Expected 10 class scores, received {probs.size}."}
+            # Softmax models should already sum to one; normalize defensively for display.
+            probs = np.clip(probs, 0, None)
+            if probs.sum() > 0:
+                probs = probs / probs.sum()
+        pred = int(np.argmax(probs))
+        return {"available": True, "digit": pred, "confidence": float(probs[pred]), "probabilities": probs}
+    except Exception as exc:
+        return {"available": False, "error": f"{type(exc).__name__}: {exc}"}
+
+
+def accuracy_text(key):
+    file_map = {"CNN": "cnn_metrics.json", "MLP": "mlp_metrics.json", "Classical ML": "classical_metrics.json"}
+    accuracy = read_accuracy(file_map[key])
+    return f"{accuracy:.2f}% test accuracy" if accuracy is not None else "Test accuracy unavailable"
+
+
+# --- Visual styling: presentation only; inference and preprocessing are unchanged. ---
 st.markdown(
     """
     <style>
-    .main-title {
-        font-size: 2.2rem;
-        font-weight: 700;
-        margin-bottom: 0.2rem;
+    :root { --ink:#172554; --muted:#60719b; --blue:#3478f6; --purple:#6848ed; }
+    .stApp { background: linear-gradient(135deg,#f7f8ff 0%,#eef2ff 55%,#f8f7ff 100%); color:var(--ink); }
+    /* Hide Streamlit's deploy/menu bar so the app feels like a standalone product. */
+    [data-testid="stHeader"] { display:none; }
+    #MainMenu, footer { visibility:hidden; }
+    [data-testid="stToolbar"] { display:none !important; }
+    [data-testid="stAppViewContainer"] > .main { padding-top:0; }
+    .block-container { max-width:1500px; padding-top:1.15rem; padding-bottom:2rem; }
+    [data-testid="stCanvas"] { border:1px solid #dce4fb; border-radius:14px; overflow:hidden; box-shadow:0 4px 14px rgba(54,72,145,.05); }
+    /* Force the entire BaseWeb select control to use readable dark text on white. */
+    [data-testid="stSelectbox"] div[data-baseweb="select"],
+    [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+    [data-testid="stSelectbox"] div[data-baseweb="select"] [role="combobox"] {
+      background:#ffffff !important; color:#172554 !important; border-color:#dbe2fb !important; opacity:1 !important;
     }
-    .sub-title {
-        font-size: 1.05rem;
-        color: #6c757d;
-        margin-bottom: 1.5rem;
+    [data-testid="stSelectbox"] div[data-baseweb="select"] *,
+    [data-testid="stSelectbox"] div[data-baseweb="select"] input,
+    [data-testid="stSelectbox"] div[data-baseweb="select"] span,
+    [data-testid="stSelectbox"] div[data-baseweb="select"] div {
+      color:#172554 !important; -webkit-text-fill-color:#172554 !important; opacity:1 !important;
     }
-    .pred-box {
-        background-color: rgba(255, 255, 255, 0.06);
-        border-radius: 12px;
-        padding: 20px;
-        text-align: center;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    [data-testid="stSelectbox"] div[data-baseweb="select"] { border-radius:12px !important; }
+    /* The opened menu is rendered outside the widget, so style its portal and every option too. */
+    body div[data-baseweb="popover"], body div[data-baseweb="popover"] > div,
+    body div[data-baseweb="popover"] ul,
+    body div[data-baseweb="popover"] [role="listbox"],
+    body div[data-baseweb="menu"], body div[data-baseweb="menu"] ul {
+      background:#ffffff !important; color:#172554 !important;
     }
-    .pred-label {
-        font-size: 0.85rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: #94a3b8;
-        font-weight: 600;
+    body div[data-baseweb="popover"] [role="option"],
+    body div[data-baseweb="popover"] [role="option"] *,
+    body div[data-baseweb="menu"] li, body div[data-baseweb="menu"] li * {
+      background-color:transparent !important; color:#172554 !important;
+      -webkit-text-fill-color:#172554 !important; opacity:1 !important;
     }
-    .pred-digit {
-        font-size: 5rem;
-        font-weight: 800;
-        color: #38bdf8;
-        line-height: 1;
-        margin: 10px 0;
+    body div[data-baseweb="popover"] [role="option"][aria-selected="true"],
+    body div[data-baseweb="popover"] [role="option"]:hover {
+      background:#efedff !important;
     }
-    .metrics-row {
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        gap: 10px;
-        margin-top: 14px;
-        padding-top: 14px;
-        border-top: 1px solid rgba(255, 255, 255, 0.12);
-    }
-    .metric-item {
-        flex: 1;
-        text-align: center;
-    }
-    .metric-sublabel {
-        font-size: 0.72rem;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        color: #94a3b8;
-        font-weight: 600;
-        margin-bottom: 4px;
-    }
-    .metric-value-conf {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #22c55e;
-    }
-    .metric-value-acc {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #38bdf8;
-    }
-    .status-badge {
-        display: inline-block;
-        padding: 0.25em 0.6em;
-        font-size: 80%;
-        font-weight: 700;
-        border-radius: 0.25rem;
-    }
+    div.stButton > button { min-height:44px; font-weight:650; }
+    div.stButton > button:not([kind="primary"]) { background:#fff; color:#33436e; }
+    h1,h2,h3 { color:#111b45 !important; letter-spacing:-.025em; }
+    .hero { display:flex; align-items:center; gap:15px; margin-bottom:1.25rem; }
+    .hero-icon { width:54px;height:54px;border-radius:17px;display:flex;align-items:center;justify-content:center;
+      color:white;font-size:27px;background:linear-gradient(135deg,#397bff,#8050ee);box-shadow:0 8px 22px #6e68ed33; }
+    .hero-title { font-size:2.1rem;line-height:1.1;font-weight:800;color:#172554; }
+    .hero-title span { color:#6551ec; }
+    .hero-sub { color:#61719a;font-size:1rem;margin-top:7px; }
+    .stat { height:76px;background:rgba(255,255,255,.78);border:1px solid #e1e7ff;border-radius:18px;padding:13px 15px;display:flex;align-items:center;gap:12px; }
+    .stat-icon {font-size:23px;color:#6551ec}.stat-main {font-weight:750;color:#172554}.stat-sub {font-size:.78rem;color:#61719a;margin-top:2px}
+    div[data-testid="stVerticalBlockBorderWrapper"] { background:rgba(255,255,255,.83);border:1px solid #e3e9fb;border-radius:22px;box-shadow:0 7px 25px rgba(54,72,145,.045); }
+    .section-head {display:flex;align-items:center;gap:11px;margin-bottom:3px;}
+    .section-icon {width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:linear-gradient(135deg,#e8edff,#f0eaff);font-size:21px;}
+    .section-title {font-size:1.22rem;font-weight:780;color:#172554}.section-sub {font-size:.88rem;color:#66769b;margin-top:3px}
+    .result-selected {border:2px solid #7460f3;border-radius:20px;padding:18px 16px;background:linear-gradient(145deg,#f0f3ff,#f7f3ff);box-shadow:0 8px 24px #6757ef18;min-height:220px;}
+    .result-other {border:1px solid #e4e8fa;border-radius:18px;padding:15px 14px;background:rgba(255,255,255,.9);min-height:156px;}
+    .result-label {font-weight:750;font-size:.92rem;color:#253461;display:flex;justify-content:space-between;gap:6px;align-items:center;}
+    .selected-pill {font-size:.68rem;background:#e2ddff;color:#5c43dc;padding:4px 8px;border-radius:20px;white-space:nowrap;}
+    .result-digit {font-size:4.6rem;line-height:1.05;text-align:center;font-weight:850;color:#4c66ef;margin:8px 0 2px;}
+    .result-digit-small {font-size:2.65rem;line-height:1.05;text-align:center;font-weight:850;color:#7350e8;margin:8px 0 2px;}
+    .result-confidence {text-align:center;color:#4b55d8;font-weight:750;font-size:.94rem;margin-bottom:10px;}
+    .result-foot {font-size:.77rem;color:#65749a;text-align:center;margin-top:8px;}
+    .status-line {display:flex;align-items:center;gap:7px;font-size:.82rem;margin:0;color:#27365f;white-space:nowrap;}
+    .dot-ok {height:8px;width:8px;flex:0 0 8px;border-radius:50%;background:#25b85a;display:inline-block;}
+    .dot-bad {height:8px;width:8px;flex:0 0 8px;border-radius:50%;background:#ef4444;display:inline-block;}
+    .model-status-title {font-size:.78rem;font-weight:750;color:#65749a;margin:12px 0 7px;text-transform:uppercase;letter-spacing:.05em;}
+    .model-status-row {display:flex;align-items:center;gap:9px;padding:9px 11px;margin:0 0 6px;background:rgba(255,255,255,.78);border:1px solid #e3e9fb;border-radius:11px;color:#27365f;font-size:.88rem;}
+    .model-status-value {margin-left:auto;font-weight:650;font-size:.82rem;}
+    .small-muted {font-size:.83rem;color:#6b7a9f;}
+    div.stButton > button[kind="primary"] {border:0;border-radius:13px;background:linear-gradient(100deg,#4c67f2,#7a4ce9);box-shadow:0 7px 16px #6b58e833;font-weight:700;min-height:45px;}
+    div.stButton > button {border-radius:12px;border-color:#dbe2fb;}
+    [data-testid="stSelectbox"] label,[data-testid="stSlider"] label {font-weight:650;color:#253461;}
+    div[data-testid="stAlert"] {border-radius:14px;}
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# --- App Header ---
-st.markdown('<div class="main-title">✏️ MNIST Handwritten Digit Recognizer</div>', unsafe_allow_html=True)
-st.markdown(
-    '<div class="sub-title">Assignment 1 • Team Project • Interactive Drawing App & Model Inference</div>',
-    unsafe_allow_html=True,
-)
+# Load every model so comparison cards can show results together.
+classical_model, classical_error = safe_load(load_classical_model)
+mlp_model, mlp_error = safe_load(load_mlp_model)
+cnn_model, cnn_error = safe_load(load_cnn_model)
+models = {"Classical ML": classical_model, "MLP": mlp_model, "CNN": cnn_model}
+load_errors = {"Classical ML": classical_error, "MLP": mlp_error, "CNN": cnn_error}
 
-# --- Sidebar Controls & Status ---
-with st.sidebar:
-    st.header("⚙️ Configuration")
-    
-    # Model Selector
-    model_choice = st.selectbox(
-        "Select Classification Model:",
-        options=[
-            "Convolutional Neural Network (CNN)",
-            "Multilayer Perceptron (MLP)",
-            "Classical ML (SVM / RF)",
-        ],
-        index=0,
+# --- Header ---
+header, stat1, stat2, stat3 = st.columns([2.8, 1, 1, 1])
+with header:
+    st.markdown(
+        '<div class="hero"><div class="hero-icon">✏</div><div><div class="hero-title">MNIST <span>Digit Recognizer</span></div><div class="hero-sub">Draw a digit (0–9) and see what our trained AI models predict.</div></div></div>',
+        unsafe_allow_html=True,
     )
+for col, icon, main, sub in [
+    (stat1, "▱", "3 Models", "CNN · MLP · Classical"),
+    (stat2, "ϟ", "Real-time", "Instant prediction"),
+    (stat3, "▥", "MNIST", "Handwritten digits"),
+]:
+    with col:
+        st.markdown(f'<div class="stat"><div class="stat-icon">{icon}</div><div><div class="stat-main">{main}</div><div class="stat-sub">{sub}</div></div></div>', unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.header("🎨 Drawing Canvas Settings")
-    stroke_width = st.slider("Brush Stroke Width:", min_value=10, max_value=30, value=20, step=2)
-    
-    st.markdown("---")
-    st.header("📦 Saved Model Status")
-    
-    # Status badges
-    def render_status(label: str, path: Path):
-        exists = path.exists()
-        badge = "🟢 Ready" if exists else "🔴 Not Found"
-        st.write(f"**{label}:** {badge}")
-        if not exists:
-            st.caption(f"Missing `{path.name}`")
+st.write("")
 
-    render_status("Classical ML", CLASSICAL_PATH)
-    render_status("MLP (Dense)", MLP_PATH)
-    render_status("CNN", CNN_PATH)
-    
-    st.markdown("---")
-    st.caption("Developed by Team of 4 • Assignment 1")
+# --- Main area ---
+left, right = st.columns([1, 1.08], gap="large")
 
+with left:
+    with st.container(border=True):
+        st.markdown('<div class="section-head"><div class="section-icon">✎</div><div><div class="section-title">1. Draw a Digit</div><div class="section-sub">Draw one digit in the canvas below.</div></div></div>', unsafe_allow_html=True)
+        if "canvas_key" not in st.session_state:
+            st.session_state.canvas_key = 0
 
-# --- Main Layout: Drawing on Left, Prediction on Right ---
-col_canvas, col_results = st.columns([1.1, 1], gap="large")
-
-with col_canvas:
-    st.subheader("Draw a Digit (0 - 9)")
-    st.write("Draw in the center of the canvas below. Click **Predict** when ready.")
-
-    # Key state to support clear button
-    if "canvas_key" not in st.session_state:
-        st.session_state.canvas_key = 0
-
-    col_btn_clear, col_btn_predict = st.columns([1.2, 1.8])
-    with col_btn_clear:
-        if st.button("🗑️ Clear Canvas", use_container_width=True):
+        # Keep model selection and both actions together, above the drawing surface.
+        key_for_label = {v: k for k, v in MODEL_NAMES.items()}
+        control_model_col, predict_col, clear_col = st.columns([2.5, 1.15, 0.9], gap="small", vertical_alignment="bottom")
+        with control_model_col:
+            selected_model = st.selectbox(
+                "Model to highlight",
+                SELECT_OPTIONS,
+                index=0,
+                key="selected_model_control",
+            )
+        selected_key = key_for_label[selected_model]
+        with predict_col:
+            predict_clicked = st.button("✦ Predict", type="primary", use_container_width=True)
+        with clear_col:
+            clear_clicked = st.button("↻ Clear", use_container_width=True)
+        if clear_clicked:
             st.session_state.canvas_key += 1
+            st.session_state.last_results = None
             st.rerun()
 
-    # Drawable Canvas Component
-    canvas_kwargs = {
-        "fill_color": "rgba(0, 0, 0, 0)",
-        "stroke_width": stroke_width,
-        "stroke_color": "#FFFFFF",
-        "background_color": "#000000",
-        "height": 280,
-        "width": 280,
-        "drawing_mode": "freedraw",
-        "key": f"canvas_{st.session_state.canvas_key}",
-    }
-    try:
-        if "return_image_data" in inspect.signature(st_canvas).parameters:
-            canvas_kwargs["return_image_data"] = True
-    except Exception:
-        pass
+        stroke_width = st.slider("Brush size", min_value=10, max_value=30, value=20, step=2)
+        canvas_kwargs = {
+            "fill_color": "rgba(0,0,0,0)",
+            "stroke_width": stroke_width,
+            # Keep white strokes on black: this matches image_utils.py's current preprocessing.
+            "stroke_color": "#FFFFFF",
+            "background_color": "#000000",
+            "height": 330,
+            "width": 430,
+            "drawing_mode": "freedraw",
+            "key": f"canvas_{st.session_state.canvas_key}",
+        }
+        try:
+            if "return_image_data" in inspect.signature(st_canvas).parameters:
+                canvas_kwargs["return_image_data"] = True
+        except (TypeError, ValueError):
+            pass
+        canvas_result = st_canvas(**canvas_kwargs)
+        st.markdown(
+            '<div class="small-muted" style="margin-top:8px">Draw one digit (0–9). The selected model will be highlighted, and the other available models will be compared.</div>',
+            unsafe_allow_html=True,
+        )
 
-    canvas_result = st_canvas(**canvas_kwargs)
-
-with col_results:
-    st.subheader("Prediction Results")
-    
-    with col_btn_predict:
-        predict_clicked = st.button("🚀 Predict Digit", type="primary", use_container_width=True)
-
-    if predict_clicked:
-        raw_image = None
-        if canvas_result is not None:
-            try:
-                raw_image = canvas_result.image_data
-            except Exception:
-                raw_image = None
-
-        if raw_image is None:
-            st.warning("Canvas is empty. Please draw a digit first.")
-        else:
-            # Preprocess the canvas drawing using Student 4 pipeline
-            flat_tensor, cnn_tensor, img2d, meta = preprocess_canvas_image(
-                raw_image
+        # Stack model status items vertically beneath the drawing for a compact, readable list.
+        st.markdown('<div class="model-status-title">Model status</div>', unsafe_allow_html=True)
+        status_info = [("CNN", CNN_PATH, cnn_model), ("MLP", MLP_PATH, mlp_model), ("Classical ML", CLASSICAL_PATH, classical_model)]
+        for key, path, model in status_info:
+            if model is not None:
+                label, color, dot_class = "Loaded", "#16964a", "dot-ok"
+            else:
+                label, color, dot_class = "Unavailable", "#dc3838", "dot-bad"
+            st.markdown(
+                f'<div class="model-status-row"><span class="{dot_class}"></span><strong>{key}</strong><span class="model-status-value" style="color:{color}">{label}</span></div>',
+                unsafe_allow_html=True,
             )
 
-            if meta.get("status") in ["blank_canvas", "no_contour", "empty_input"]:
-                st.warning("⚠️ Canvas appears to be blank. Please draw a digit clearly!")
-            elif meta.get("status") == "too_small":
-                st.warning("⚠️ That looks like just a dot or a speck! Please draw a full digit (0 – 9).")
+with right:
+    with st.container(border=True):
+        st.markdown('<div class="section-head"><div class="section-icon">▥</div><div><div class="section-title">2. Prediction Results</div><div class="section-sub">The selected model is highlighted; compare the others below.</div></div></div>', unsafe_allow_html=True)
+        if predict_clicked:
+            raw_image = getattr(canvas_result, "image_data", None) if canvas_result is not None else None
+            if raw_image is None:
+                st.session_state.last_results = None
+                st.warning("The canvas is empty. Draw a digit first, then select Predict digit.")
             else:
-                # 1. Load the active model
-                model = None
-                input_tensor = None
-
-                if model_choice == "Classical ML (SVM / RF)":
-                    model = load_classical_model()
-                    input_tensor = flat_tensor
-                    train_script = "python src/train_classical.py"
-                elif model_choice == "Multilayer Perceptron (MLP)":
-                    model = load_mlp_model()
-                    input_tensor = flat_tensor
-                    train_script = "python src/train_mlp.py"
-                else:  # CNN
-                    model = load_cnn_model()
-                    input_tensor = cnn_tensor
-                    train_script = "python src/train_cnn.py"
-
-                # Check if model exists
-                if model is None:
-                    st.error(
-                        f"🚨 Model `{model_choice}` has not been trained yet!\n\n"
-                        f"Please train it first by running in your terminal:\n"
-                        f"```bash\n{train_script}\n```"
-                    )
+                flat_tensor, cnn_tensor, img2d, meta = preprocess_canvas_image(raw_image)
+                if meta.get("status") != "success":
+                    st.session_state.last_results = None
+                    if meta.get("status") == "too_small":
+                        st.warning("That drawing is too small. Please draw a complete digit.")
+                    else:
+                        st.warning("The canvas appears blank. Draw a clear digit and try again.")
                 else:
-                    # 2. Run Inference
-                    with st.spinner("Analyzing stroke pattern..."):
-                        if model_choice == "Classical ML (SVM / RF)":
-                            if hasattr(model, "predict_proba"):
-                                probabilities = model.predict_proba(input_tensor)[0]
-                            else:
-                                pred = model.predict(input_tensor)[0]
-                                probabilities = np.zeros(10)
-                                probabilities[pred] = 1.0
-                        else:
-                            probs = model.predict(input_tensor, verbose=0)
-                            probabilities = probs[0]
+                    with st.spinner("Running the three models…"):
+                        results = {key: run_prediction(key, models, flat_tensor, cnn_tensor) for key in models}
+                    st.session_state.last_results = {"results": results, "img2d": img2d}
 
-                        pred_digit = int(np.argmax(probabilities))
-                        model_acc_str = get_model_accuracy(model_choice)
-                        top_indices = np.argsort(probabilities)[::-1][:3]
-                        top_probs = [(int(idx), float(probabilities[idx] * 100.0)) for idx in top_indices]
+        saved = st.session_state.get("last_results")
+        if saved:
+            results = saved["results"]
+            selected_result = results[selected_key]
+            if selected_result.get("available"):
+                st.markdown(
+                    f'<div class="result-selected"><div class="result-label"><span>✦ {selected_key} prediction</span><span class="selected-pill">SELECTED MODEL</span></div><div class="result-digit">{selected_result["digit"]}</div><div class="result-confidence">{selected_result["confidence"] * 100:.1f}% confidence</div><div class="result-foot">{accuracy_text(selected_key)}</div></div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.error(f"Selected model unavailable: {selected_result.get('error', 'Unknown error')}")
 
-                    # 3. Display High-Level Result Card
-                    res_col1, res_col2 = st.columns([1, 1])
-                    with res_col1:
+            other_keys = [key for key in ("CNN", "MLP", "Classical ML") if key != selected_key]
+            other_cols = st.columns(2)
+            for col, key in zip(other_cols, other_keys):
+                result = results[key]
+                with col:
+                    if result.get("available"):
                         st.markdown(
-                            f"""
-                            <div class="pred-box">
-                                <div class="pred-label">PREDICTED DIGIT</div>
-                                <div class="pred-digit">{pred_digit}</div>
-                                <div style="font-size: 1.25rem; font-weight: 700; color: #22c55e; margin: 4px 0 10px 0;">
-                                    {top_probs[0][1]:.1f}% Probability
-                                </div>
-                                <div style="padding: 10px 0; border-top: 1px solid rgba(255, 255, 255, 0.12); border-bottom: 1px solid rgba(255, 255, 255, 0.12);">
-                                    <div class="metric-sublabel" style="margin-bottom: 6px;">Top Candidate Guesses</div>
-                                    <div style="display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;">
-                                        <span style="background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #4ade80; padding: 2px 7px; border-radius: 6px; font-size: 0.8rem; font-weight: 700;">
-                                            #{1}: Digit {top_probs[0][0]} ({top_probs[0][1]:.1f}%)
-                                        </span>
-                                        <span style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; padding: 2px 7px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
-                                            #{2}: Digit {top_probs[1][0]} ({top_probs[1][1]:.1f}%)
-                                        </span>
-                                        <span style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; padding: 2px 7px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
-                                            #{3}: Digit {top_probs[2][0]} ({top_probs[2][1]:.1f}%)
-                                        </span>
-                                    </div>
-                                </div>
-                                <div style="margin-top: 10px; font-size: 0.78rem; color: #94a3b8;">
-                                    Model Test Accuracy: <strong style="color: #38bdf8; font-size: 0.95rem;">{model_acc_str}</strong>
-                                </div>
-                            </div>
-                            """,
+                            f'<div class="result-other"><div class="result-label">{key}</div><div class="result-digit-small">{result["digit"]}</div><div class="result-confidence">{result["confidence"] * 100:.1f}% confidence</div><div class="result-foot">{accuracy_text(key)}</div></div>',
                             unsafe_allow_html=True,
                         )
+                    else:
+                        st.warning(f"{key} unavailable")
+                        if load_errors.get(key):
+                            st.caption(load_errors[key])
+                        else:
+                            st.caption(result.get("error", "Model file missing."))
 
-                    with res_col2:
-                        st.caption("Normalized 28x28 Model Input:")
-                        # Display 28x28 normalized image as viewed by model
-                        st.image(
-                            img2d,
-                            caption="MNIST Centered 28x28",
-                            width=140,
-                            clamp=True,
-                        )
+            st.markdown("#### Class probabilities — selected model")
+            if selected_result.get("available"):
+                prob_df = pd.DataFrame({"Digit": [str(i) for i in range(10)], "Probability (%)": selected_result["probabilities"] * 100})
+                st.bar_chart(prob_df.set_index("Digit"), y="Probability (%)", color="#6b5be8")
+                with st.expander("View the 28 × 28 image the model received"):
+                    st.image(saved["img2d"], caption="Preprocessed grayscale input", width=180, clamp=True)
+        else:
+            st.markdown('<div style="padding:42px 12px;text-align:center;color:#7482a6"><div style="font-size:3rem;margin-bottom:8px">✧</div><div style="font-weight:750;color:#34436f;font-size:1.05rem">Your predictions will appear here</div><div style="font-size:.88rem;margin-top:7px">Draw a digit, choose the model to highlight, then click Predict digit.</div></div>', unsafe_allow_html=True)
 
-                    # 4. Class Probability Distribution Bar Chart
-                    st.markdown("#### Class Probabilities (0 - 9)")
-                    prob_df = pd.DataFrame(
-                        {
-                            "Digit": [str(d) for d in range(10)],
-                            "Probability (%)": [p * 100.0 for p in probabilities],
-                        }
-                    )
-                    
-                    st.bar_chart(
-                        prob_df.set_index("Digit"),
-                        y="Probability (%)",
-                        color="#1f77b4",
-                    )
-                    
-                    # Top 3 summary table
-                    top3_indices = np.argsort(probabilities)[::-1][:3]
-                    top3_text = " | ".join(
-                        [f"**#{i+1}: Digit {idx}** ({probabilities[idx]*100:.1f}%)" for i, idx in enumerate(top3_indices)]
-                    )
-                    st.info(f"Top Candidate Predictions: {top3_text}")
-    else:
-        st.info("👈 Draw a digit on the canvas and click **'🚀 Predict Digit'** to see classification results.")
-
-# --- Architecture Details Expander ---
-with st.expander("ℹ️ About the Models & Pipeline"):
+with st.expander("About the models and preprocessing"):
     st.markdown(
         """
-        - **Preprocessing (Student 4):**
-          - Raw canvas stroke is extracted, bounded, aspect-ratio preserved to 20x20 pixels, and centered inside a 28x28 frame using center-of-mass alignment, mirroring the original MNIST database construction.
-        - **Classical ML (Student 1):**
-          - Scikit-Learn Support Vector Classifier (`SVC(kernel='rbf')`) / Random Forest trained on 784-dimensional flattened vectors with hyperparameter tuning via `GridSearchCV`.
-        - **Multilayer Perceptron (Student 2):**
-          - Feedforward Neural Network using **Dense layers only** (`Dense(512) -> Dense(256) -> Dense(10)`), with Batch Normalization and Dropout.
-        - **Convolutional Neural Network (Student 3):**
-          - Introductory 2D CNN architecture (`Conv2D -> MaxPool2D -> Conv2D -> MaxPool2D -> Dense(128) -> Dense(10)`), capturing local 2D spatial features and translation invariance.
+        - **Preprocessing:** the existing `src/image_utils.py` pipeline converts the canvas drawing to a centered, normalized 28 × 28 image.
+        - **Classical ML:** a saved scikit-learn model receives 784 flattened pixel values.
+        - **MLP:** a feed-forward neural network receives 784 flattened pixel values.
+        - **CNN:** a convolutional neural network receives the 28 × 28 image with one grayscale channel.
+        - **Comparison:** each available model predicts the same drawing. The selected model is highlighted, and the other results are shown alongside it.
         """
     )
+
+st.caption("MNIST Digit Recognizer · UI refresh only · Saved models and preprocessing are not modified")
