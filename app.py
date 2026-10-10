@@ -245,7 +245,7 @@ with col_canvas:
     canvas_result = st_canvas(**canvas_kwargs)
 
 with col_results:
-    st.subheader("Prediction & Confidence")
+    st.subheader("Prediction Results")
     
     with col_btn_predict:
         predict_clicked = st.button("🚀 Predict Digit", type="primary", use_container_width=True)
@@ -310,7 +310,6 @@ with col_results:
                             probabilities = probs[0]
 
                         pred_digit = int(np.argmax(probabilities))
-                        confidence = float(probabilities[pred_digit])
                         model_acc_str = get_model_accuracy(model_choice)
 
                     # 3. Display High-Level Result Card
@@ -321,21 +320,14 @@ with col_results:
                             <div class="pred-box">
                                 <div class="pred-label">PREDICTED DIGIT</div>
                                 <div class="pred-digit">{pred_digit}</div>
-                                <div class="metrics-row">
-                                    <div class="metric-item">
-                                        <div class="metric-sublabel">Confidence</div>
-                                        <div class="metric-value-conf">{confidence * 100:.1f}%</div>
-                                    </div>
-                                    <div class="metric-item" style="border-left: 1px solid rgba(255, 255, 255, 0.15);">
-                                        <div class="metric-sublabel">Model Accuracy</div>
-                                        <div class="metric-value-acc">{model_acc_str}</div>
-                                    </div>
+                                <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.12);">
+                                    <div class="metric-sublabel">Model Test Accuracy</div>
+                                    <div class="metric-value-acc">{model_acc_str}</div>
                                 </div>
                             </div>
                             """,
                             unsafe_allow_html=True,
                         )
-                        st.caption("ℹ️ **Confidence:** Certainty on this stroke • **Accuracy:** Test benchmark score.")
 
                     with res_col2:
                         st.caption("Normalized 28x28 Model Input:")
