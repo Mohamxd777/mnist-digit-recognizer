@@ -2,30 +2,36 @@
 
 **Course:** Machine Learning & Deep Learning  
 **Assignment:** Assignment 1 — Training Models on MNIST + Interactive Drawing App  
-**Team Members & Roles:**  
-- **@abuelmagd2oo5-svg** (ML) — Data Loading & Classical Machine Learning (SVM / Random Forest)  
-- **@M0L0TFY** (NN) — Multilayer Perceptron (MLP) Modeling (Dense Layers)  
-- **@Mohamxd777** (DL) — Convolutional Neural Network (CNN) & Cross-Model Evaluation Suite  
+**Team Members & Roles:**
+
+- **@abuelmagd2oo5-svg** (ML) — Data Loading & Classical Machine Learning (SVM / Random Forest)
+- **@M0L0TFY** (NN) — Multilayer Perceptron (MLP) Modeling (Dense Layers)
+- **@Mohamxd777** (DL) — Convolutional Neural Network (CNN) & Cross-Model Evaluation Suite
 - **@saraasawy** (Frontend & Integration) — Image Preprocessing, Streamlit UI & Full-Stack Integration  
-**Date:** `[Submission Date]`  
+  **Date:** `[Submission Date]`
 
 ---
 
 ## 1. Data Preprocessing & Input Pipelines
 
 ### 1.1 MNIST Dataset Characteristics
+
 - **Total Samples:** 70,000 images (60,000 train / validation, 10,000 test).
 - **Resolution & Classes:** $28 \times 28$ grayscale pixels; 10 balanced digit classes ($0-9$).
 - **Stratified Split:** 90% training (54,000 samples) and 10% validation (6,000 samples).
 
 ### 1.2 Normalization and Tensor Formatting
+
 Explain how pixel values were preprocessed for each model family:
+
 - **Scaling:** Scaled raw unsigned integers $[0, 255]$ into floating point $[0.0, 1.0]$ via $X_{\text{norm}} = X / 255.0$.
 - **Classical ML & MLP Format:** Flattened 2D images into 1D vectors with shape $(N, 784)$.
 - **CNN Format:** Retained 2D spatial dimensions with an explicit channel dimension: shape $(N, 28, 28, 1)$.
 
 ### 1.3 Canvas Drawing Preprocessing Pipeline (Deliverable 4)
+
 Discuss how the interactive drawing canvas in Streamlit transforms freehand user drawings to match the distribution of the MNIST dataset:
+
 1. **Grayscale Extraction:** Convert raw RGBA canvas buffer into a single intensity channel.
 2. **Bounding Box Cropping:** Detect non-zero strokes to remove arbitrary spatial translation offsets.
 3. **Aspect-Ratio Preserving Scaling:** Scale the cropped digit so its largest dimension spans exactly 20 pixels.
@@ -36,6 +42,7 @@ Discuss how the interactive drawing canvas in Streamlit transforms freehand user
 ## 2. Model Architectures & Hyperparameter Tuning
 
 ### 2.1 Classical Machine Learning (Student 1)
+
 - **Algorithm Selected:** Support Vector Classifier (`SVC(kernel='rbf')`) / `RandomForestClassifier`.
 - **Hyperparameter Search Configuration (`GridSearchCV`):**
   - Parameter Grid Tested:
@@ -50,29 +57,34 @@ Discuss how the interactive drawing canvas in Streamlit transforms freehand user
 
 ---
 
-### 2.2 Multilayer Perceptron (MLP) (Student 2)
+### 2.2 Multilayer Perceptron (MLP)
+
 - **Constraint Compliance:** Dense layers ONLY. No convolutional or pooling layers.
 - **Model Topology:**
   - Input Layer: 784 features.
   - Hidden Layer 1: `Dense(512, activation='relu')` + `BatchNormalization()` + `Dropout(0.2)`
   - Hidden Layer 2: `Dense(256, activation='relu')` + `BatchNormalization()` + `Dropout(0.2)`
+  - Hidden Layer 3: `Dense(128,activation='relu')` + `BatchNormalization()` + `Dropout(0.4)`
   - Output Layer: `Dense(10, activation='softmax')`
 - **Hyperparameter Grid Sweeps:**
-  
-| Configuration | Hidden Layers | Dropout Rate | Learning Rate | Val Accuracy (%) | Test Accuracy (%) |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Config A** | [256, 128] | 0.0 | 0.001 | `XX.X%` | `XX.X%` |
-| **Config B** | [512, 256] | 0.2 | 0.001 | `XX.X%` | `XX.X%` |
-| **Config C** | [512, 256, 128]| 0.4 | 0.0005 | `XX.X%` | `XX.X%` |
+
+| Configuration | Hidden Layers    | Dropout Rate | Learning Rate | Batch Size | Val Accuracy (%) | Test Accuracy (%) | Training Time |
+| :------------ | :--------------- | :----------- | :------------ | :--------- | :--------------- | :---------------- | :------------ |
+| **Config A**  | [256, 128]       | 0.0          | 0.001         | 128        | 98.12%           | 98.19%            | 45.68 s       |
+| **Config B**  | [512, 256]       | 0.2          | 0.001         | 128        | 98.31%           | 98.35%            | 60.34 s       |
+| **Config C**  | [512, 256, 128]  | 0.4          | 0.0005        | 128        | 98.59%           | 98.61%            | 119.15 s      |
+| **Config D**  | [512, 256, 128]  | 0.3          | 0.0005        | 64         | 98.60%           | 98.62%            | 178.09 s      |
+| **Config E**  | [1024, 512, 256] | 0.3          | 0.0003        | 64         | 98.49%           | 98.52%            | 203.27 s      |
 
 - **Training Dynamics:**
   - Loss Function: `sparse_categorical_crossentropy`
   - Optimizer: `Adam`
-  - Early stopping convergence epoch: `[Insert epoch]`
+  - Callbacks: `EarlyStopping(patience=5, restore_best_weights=True)` and `ReduceLROnPlateau(factor=0.5, patience=3)`
 
 ---
 
 ### 2.3 Introductory Convolutional Neural Network (CNN) (Student 3)
+
 - **Constraint Compliance:** Introductory architecture (Conv2D + MaxPool2D + Dense). No transfer learning or deep pre-trained nets (ResNet/VGG).
 - **Model Architecture:**
   - Layer 1: `Conv2D(32, (3, 3), activation='relu', padding='same')` $\rightarrow$ `MaxPooling2D((2, 2))`
@@ -89,7 +101,7 @@ Discuss how the interactive drawing canvas in Streamlit transforms freehand user
 
 ## 3. Quantitative Cross-Model Comparison & Evaluation
 
-*(Populate this table by running `python src/evaluate_models.py`)*
+_(Populate this table by running `python src/evaluate_models.py`)_
 
 | Evaluation Metric | Classical ML (SVM / RF) | Multilayer Perceptron (MLP) | Convolutional Neural Network (CNN) |
 | :--- | :--- | :--- | :--- |
@@ -103,6 +115,7 @@ Discuss how the interactive drawing canvas in Streamlit transforms freehand user
 | **Model Disk Size (MB)** | `XX.X MB` | `X.X MB` | `4.86 MB` |
 
 ### 3.1 Confusion Matrix & Error Analysis
+
 - **Most Common Misclassifications:** Discuss which digits had highest confusion (e.g., $4 \leftrightarrow 9$, $3 \leftrightarrow 5$, $7 \leftrightarrow 1$).
 - **Qualitative Failure Modes:** Show failure cases from user canvas drawings (e.g. European-style crossed 7 vs standard 7).
 
@@ -111,7 +124,9 @@ Discuss how the interactive drawing canvas in Streamlit transforms freehand user
 ## 4. Best Model Selection & Trade-Off Justification
 
 ### 4.1 Trade-Off Analysis
+
 Evaluate the models across competing engineering dimensions:
+
 1. **Accuracy vs. Computational Complexity:**
    - CNN achieves the highest generalization accuracy due to spatial parameter sharing.
 2. **Inference Latency & Production Viability:**
@@ -120,6 +135,7 @@ Evaluate the models across competing engineering dimensions:
    - Compare the $O(N^2)$ to $O(N^3)$ computational scaling of kernel SVMs against the linear mini-batch gradient descent of neural networks.
 
 ### 4.2 Final Recommendation for Interactive UI
+
 - **Selected Best Model:** `[State CNN or MLP]`
 - **Engineering Justification:**
   - Summarize why this model represents the optimal Pareto frontier balancing classification accuracy, inference speed, robustness to off-center brush strokes, and binary storage footprint.
@@ -128,9 +144,9 @@ Evaluate the models across competing engineering dimensions:
 
 ## 5. Team Contribution Breakdown
 
-| Team Member | Sub-branch | Primary Contributions | Percentage Effort |
-| :--- | :--- | :--- | :--- |
-| **@abuelmagd2oo5-svg** (ML) | `abuelmagd2oo5-svg-ml` | Implemented data loader, normalization, classical ML (SVM/RF), GridSearchCV | 25% |
-| **@M0L0TFY** (NN) | `M0L0TFY-nn` | Implemented Dense-only MLP, hyperparameter grid search, validation curves | 25% |
-| **@Mohamxd777** (DL) | `Mohamxd777-dl` | Implemented introductory CNN, unified evaluation suite, metrics exporter | 25% |
-| **@saraasawy** (Frontend & Integration) | `saraasawy-frontend` | Implemented canvas preprocessing, center-of-mass centering, Streamlit UI app, joining front & back | 25% |
+| Team Member                             | Sub-branch             | Primary Contributions                                                                              | Percentage Effort |
+| :-------------------------------------- | :--------------------- | :------------------------------------------------------------------------------------------------- | :---------------- |
+| **@abuelmagd2oo5-svg** (ML)             | `abuelmagd2oo5-svg-ml` | Implemented data loader, normalization, classical ML (SVM/RF), GridSearchCV                        | 25%               |
+| **@M0L0TFY** (NN)                       | `M0L0TFY-nn`           | Implemented Dense-only MLP, hyperparameter grid search, validation curves                          | 25%               |
+| **@Mohamxd777** (DL)                    | `Mohamxd777-dl`        | Implemented introductory CNN, unified evaluation suite, metrics exporter                           | 25%               |
+| **@saraasawy** (Frontend & Integration) | `saraasawy-frontend`   | Implemented canvas preprocessing, center-of-mass centering, Streamlit UI app, joining front & back | 25%               |
