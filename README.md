@@ -2,7 +2,7 @@
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![TensorFlow 2.15+](https://img.shields.io/badge/TensorFlow-2.15+-orange.svg)](https://tensorflow.org/)
-[![Streamlit App](https://img.shields.io/badge/Streamlit-1.32+-FF4B4B.svg)](https://streamlit.io/)
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/deploy?repository=Mohamxd777/mnist-digit-recognizer&branch=main&mainModule=app.py)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 An end-to-end Machine Learning and Deep Learning system for handwritten digit recognition on the MNIST benchmark dataset. Features three distinct model paradigms (Classical ML, Multilayer Perceptron, and Convolutional Neural Networks) and an interactive web application built with Streamlit and `streamlit-drawable-canvas`.
