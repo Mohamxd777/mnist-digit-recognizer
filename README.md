@@ -1,13 +1,103 @@
+<div align="center">
+
 # ✏️ MNIST Digit Recognizer & Interactive Drawing App
 
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![TensorFlow 2.15+](https://img.shields.io/badge/TensorFlow-2.15+-orange.svg)](https://tensorflow.org/)
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/deploy?repository=Mohamxd777/mnist-digit-recognizer&branch=main&mainModule=app.py)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Live App](https://img.shields.io/badge/Streamlit_App-Live_Online-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://mnistdigitrecognizerr.streamlit.app/)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Mohamxd777%2Fmnist--digit--recognizer-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Mohamxd777/mnist-digit-recognizer)
 
-An end-to-end Machine Learning and Deep Learning system for handwritten digit recognition on the MNIST benchmark dataset. Features three distinct model paradigms (Classical ML, Multilayer Perceptron, and Convolutional Neural Networks) and an interactive web application built with Streamlit and `streamlit-drawable-canvas`.
+<br/>
 
-Developed as **Assignment 1** by a team of 4 students.
+[![Python 3.9+](https://img.shields.io/badge/Python-3.9+-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![TensorFlow 2.15+](https://img.shields.io/badge/TensorFlow-2.15+-FF6F00.svg?logo=tensorflow&logoColor=white)](https://tensorflow.org/)
+[![Keras 3](https://img.shields.io/badge/Keras-3.x-D00000.svg?logo=keras&logoColor=white)](https://keras.io/)
+[![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.3+-F7931E.svg?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22c55e.svg)](LICENSE)
+
+<p align="center">
+  <b>An end-to-end Machine Learning and Deep Learning system for handwritten digit recognition on the MNIST benchmark dataset.</b><br/>
+  Features three distinct model paradigms (Classical ML, Multilayer Perceptron, and Convolutional Neural Networks) evaluated under identical conditions and served via a modern, interactive Streamlit web application.
+</p>
+
+[**🚀 Open Live Web App**](https://mnistdigitrecognizerr.streamlit.app/) • [**📊 View Benchmarks**](#-cross-model-benchmark-matrix) • [**⚡ Quick Start**](#-quick-start-guide) • [**👥 Team Tasks**](#-team-contributions--ownership)
+
+---
+
+</div>
+
+## 🌐 Live Web Application
+
+The interactive web application is deployed and live on **Streamlit Community Cloud**:
+
+👉 **[https://mnistdigitrecognizerr.streamlit.app/](https://mnistdigitrecognizerr.streamlit.app/)**
+
+### Key App Capabilities:
+* **Interactive Freehand Canvas:** Draw any digit ($0$–$9$) directly in your browser with customizable brush stroke thickness.
+* **Simultaneous 3-Model Inference:** A single click on **✦ Predict** queries the **CNN**, **MLP**, and **Classical SVM** models concurrently on the exact same drawing.
+* **Model Consensus Detection:** Automatically calculates and displays ensemble agreement across all models (*Full Consensus*, *Majority Agreement*, or *Split Decision*).
+* **Deep Probability Distribution:** Dynamic interactive bar chart showing predicted probability percentages across all classes $0$ through $9$.
+* **Canonical Preprocessing Inspector:** Real-time expander revealing the centered, normalized $28 \times 28$ image matrix and bounding box metadata sent to the models.
+* **Zero-Rerun State Caching:** Switch the highlighted model in the dropdown to instantly view its confidence breakdown without redrawing or recomputing predictions.
+
+---
+
+## 📊 Cross-Model Benchmark Matrix
+
+All models were evaluated using the uniform benchmarking suite ([`src/evaluate_models.py`](src/evaluate_models.py)) across **21,000 real MNIST test samples** (30% stratified test split from 70,000 images):
+
+| Model Paradigm | Architecture / Algorithm | Test Accuracy | Macro F1 | Inference Latency | Trainable Parameters | Disk Size |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **Classical ML** | Support Vector Classifier (`SVC`, RBF Kernel, $C=10.0$) | **97.02%** | **0.9700** | 2.4627 ms/sample | *Non-parametric* | 21.33 MB |
+| **Multilayer Perceptron (MLP)** | Deep Feedforward (`Dense`: 512 → 256 → 128 → 10) + BatchNorm + Dropout | **99.59%** | **0.9959** | **0.1188 ms/sample** | 571,018 | 6.57 MB |
+| **Convolutional Neural Net (CNN)** | Introductory 2D CNN (`Conv2D(32)` → `MaxPool` → `Conv2D(64)` → `MaxPool` → `Dense(128)`) | **99.09%** | **0.9909** | 0.1587 ms/sample | **421,642** | **4.86 MB** |
+
+### Key Trade-Off Insights:
+1. **Accuracy & Generalization:** The **MLP** achieved the highest test accuracy (**99.59%**) followed closely by the **CNN** (**99.09%**). Both deep learning models decisively out-performed the classical RBF SVM baseline (**97.02%**).
+2. **Inference Latency:** Both neural network architectures demonstrated rapid throughput (~**0.12–0.16 ms per sample** on CPU), making them over **15× to 20× faster** at inference time than the Support Vector Classifier (**2.46 ms per sample**), whose kernel evaluations scale with the number of support vectors.
+3. **Storage Footprint:** The **CNN** achieved the most compact model artifact (**4.86 MB**), requiring fewer parameters than the dense MLP while capturing 2D spatial features and translation invariance.
+
+---
+
+## 🧠 Architectural Overview
+
+```text
+                                        ┌────────────────────────┐
+                                        │  User Canvas Drawing   │
+                                        └───────────┬────────────┘
+                                                    │
+                                                    ▼
+                                    ┌────────────────────────────────┐
+                                    │      src/image_utils.py        │
+                                    │  1. Extract Grayscale Intensity│
+                                    │  2. Crop Bounding Box          │
+                                    │  3. Aspect-Preserve to 20x20   │
+                                    │  4. Center-of-Mass into 28x28  │
+                                    │  5. Normalize to [0.0, 1.0]    │
+                                    └───────┬────────────────┬───────┘
+                                            │                │
+                        Flattened (1, 784)  │                │ Spatial (1, 28, 28, 1)
+                                            ▼                ▼
+                     ┌──────────────────────┴────────┐  ┌─────────────────────────┐
+                     │                               │  │       src/train_cnn.py  │
+                     ▼                               ▼  │  Conv2D (32, 3x3)       │
+           ┌─────────────────────┐       ┌─────────────────────┐│  MaxPooling2D (2x2)     │
+           │src/train_classical.py│      │  src/train_mlp.py   ││  Conv2D (64, 3x3)       │
+           │  Scikit-Learn SVC   │       │  Dense (512) + BN   ││  MaxPooling2D (2x2)     │
+           │  RBF Kernel, C=10.0 │       │  Dense (256) + BN   ││  Flatten + Dense(128)   │
+           │  GridSearchCV Tuned │       │  Dense (128) + BN   ││  Dense(10, Softmax)     │
+           │  Probabilities      │       │  Dense(10, Softmax) │└───────────┬─────────────┘
+           └──────────┬──────────┘       └──────────┬──────────┘            │
+                      │                             │                       │
+                      └──────────────────────┬──────┴───────────────────────┘
+                                             │
+                                             ▼
+                                ┌─────────────────────────┐
+                                │   app.py (Streamlit UI) │
+                                │  • Top Predicted Digit  │
+                                │  • Model Consensus Pill │
+                                │  • 10-Class Probability │
+                                │  • Multi-Model Compare  │
+                                └─────────────────────────┘
+```
 
 ---
 
@@ -15,22 +105,29 @@ Developed as **Assignment 1** by a team of 4 students.
 
 ```text
 mnist-digit-recognizer/
-├── .gitignore                 # Excludes venv, cache, OS files, and datasets
-├── requirements.txt           # Python library dependencies
-├── README.md                  # Comprehensive setup, training, and execution guide
-├── TEAM_TASKS.md              # 4-student role distribution, ownership boundaries & Git workflow
-├── REPORT_TEMPLATE.md         # Technical report scaffold for Deliverable 3
-├── saved_models/              # Directory housing saved model weights and metrics JSONs
-│   └── .gitkeep
-├── src/
-│   ├── __init__.py
-│   ├── data_loader.py         # [Student 1] Dual-modality MNIST loader (N, 784) and (N, 28, 28, 1)
-│   ├── train_classical.py     # [Student 1] Classical ML (SVM/RF) + GridSearchCV tuning
-│   ├── train_mlp.py           # [Student 2] Multilayer Perceptron (Dense-only) + hyperparameter search
-│   ├── train_cnn.py           # [Student 3] Introductory CNN (Conv2D + MaxPool + Dense) + tuning
-│   ├── evaluate_models.py     # [Student 3] Uniform cross-model benchmarking (Acc, F1, Latency, Params)
-│   └── image_utils.py         # [Student 4] Canvas RGBA -> Crop -> 20x20 scale -> 28x28 Center-of-Mass
-└── app.py                     # [Student 4] Interactive Streamlit drawing app & live probability charts
+├── .gitignore                          # Excludes caches, venv, checkpoints, and temporary logs
+├── requirements.txt                    # Verified Python library dependencies
+├── README.md                           # Comprehensive documentation & setup instructions
+├── TEAM_TASKS.md                       # Role distributions, code ownership & workflow protocols
+├── REPORT_TEMPLATE.md                  # Academic report scaffold for Deliverable 3
+├── app.py                              # Interactive Streamlit drawing web application
+├── saved_models/                       # Trained model weights, evaluation metrics, and plots
+│   ├── classical_model.joblib          # Trained Scikit-Learn SVC artifact (21.3 MB)
+│   ├── classical_metrics.json          # Classical ML training and evaluation metadata
+│   ├── mlp_model.keras                 # Trained MLP Keras model artifact (6.6 MB)
+│   ├── mlp_metrics.json                # MLP training curves and test evaluation metadata
+│   ├── cnn_model.keras                 # Trained CNN Keras model artifact (4.9 MB)
+│   ├── cnn_metrics.json                # CNN training and evaluation metadata
+│   ├── comparison_table.csv            # Uniform comparative metrics table across models
+│   └── model_comparison.png            # Visual bar charts comparing accuracy and latency
+└── src/
+    ├── __init__.py                     # Modular package initialization
+    ├── data_loader.py                  # Dual-modality MNIST loader (N, 784) and (N, 28, 28, 1)
+    ├── image_utils.py                  # RGBA canvas stroke extraction and MNIST canonical centering
+    ├── train_classical.py              # Classical ML modeling (SVM / Random Forest) + GridSearchCV
+    ├── train_mlp.py                    # Dense-only Multilayer Perceptron with hyperparameter tuning
+    ├── train_cnn.py                    # Introductory 2D CNN with regularization and callbacks
+    └── evaluate_models.py              # Cross-model uniform benchmarking framework
 ```
 
 ---
@@ -38,11 +135,12 @@ mnist-digit-recognizer/
 ## ⚡ Quick Start Guide
 
 ### 1. Prerequisites & Environment Setup
-Clone the repository and configure a dedicated Python virtual environment:
+
+Clone the repository and initialize a dedicated Python virtual environment (Python 3.9 – 3.13):
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/mnist-digit-recognizer.git
+git clone https://github.com/Mohamxd777/mnist-digit-recognizer.git
 cd mnist-digit-recognizer
 
 # Create a virtual environment
@@ -56,88 +154,84 @@ python -m venv venv
 # On macOS / Linux:
 source venv/bin/activate
 
-# Install required dependencies
+# Upgrade pip and install dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
 ---
 
-## 🚀 Model Training Workflow
+### 2. Launch the Interactive App Locally
 
-Each model can be trained independently using its modular training script. Trained weights and performance metrics are automatically saved into `saved_models/`.
+To start the Streamlit web application on your local machine:
 
-### 1. Train Classical ML (Student 1)
-Trains a Support Vector Classifier (`SVC`) or Random Forest with hyperparameter grid search:
 ```bash
-# Train SVM (default, subsample for fast tuning):
+python -m streamlit run app.py
+```
+
+The application will start immediately and can be accessed at:
+👉 **`http://localhost:8501`**
+
+---
+
+### 3. Training the Models Independently
+
+Each model includes a self-contained, modular training script with configurable CLI arguments:
+
+#### A. Train Classical Machine Learning (Student 1)
+```bash
+# Train Support Vector Classifier (RBF Kernel with GridSearchCV):
 python src/train_classical.py --model-type svm --sample-size 10000 --cv-folds 3
 
 # Or train Random Forest:
 python src/train_classical.py --model-type rf --sample-size 20000
 ```
-- **Output:** Saves `saved_models/classical_model.joblib` and `saved_models/classical_metrics.json`.
+*Outputs: `saved_models/classical_model.joblib` and `saved_models/classical_metrics.json`.*
 
-### 2. Train Multilayer Perceptron (MLP) (Student 2)
-Trains a feedforward deep neural network using **Dense layers only**:
+#### B. Train Multilayer Perceptron (Student 2)
 ```bash
-python src/train_mlp.py --hidden-units 512 256 --dropout 0.2 --epochs 20 --batch-size 128 --lr 0.001
+# Train feedforward Dense-only neural network:
+python src/train_mlp.py --hidden-units 512 256 128 --dropout 0.4 --epochs 25 --batch-size 128 --lr 0.0005
 ```
-- **Output:** Saves `saved_models/mlp_model.keras` and `saved_models/mlp_metrics.json`.
+*Outputs: `saved_models/mlp_model.keras` and `saved_models/mlp_metrics.json`.*
 
-### 3. Train Introductory CNN (Student 3)
-Trains an introductory Convolutional Neural Network (`Conv2D` + `MaxPooling2D` + `Dense`):
+#### C. Train Convolutional Neural Network (Student 3)
 ```bash
+# Train introductory 2D CNN:
 python src/train_cnn.py --filters-1 32 --filters-2 64 --dense-units 128 --dropout 0.25 --epochs 15
 ```
-- **Output:** Saves `saved_models/cnn_model.keras` and `saved_models/cnn_metrics.json`.
+*Outputs: `saved_models/cnn_model.keras` and `saved_models/cnn_metrics.json`.*
 
 ---
 
-## 📊 Cross-Model Evaluation & Benchmarks (Student 3)
+### 4. Run the Cross-Model Benchmark Suite
 
-After training the models, execute the evaluation suite to calculate uniform comparative metrics on the 10,000-image MNIST test set:
+Execute the uniform evaluation script to benchmark all 3 saved models against the MNIST test set:
 
 ```bash
 python src/evaluate_models.py
 ```
 
-This generates:
-1. Console Markdown table displaying:
-   - Test Accuracy (%)
-   - Macro F1-Score
-   - Training Time (seconds)
-   - Average Inference Latency (ms / sample)
-   - Model Complexity (Parameter count & Disk size)
-2. `saved_models/comparison_table.csv`
-3. `saved_models/model_comparison.png` (Comparative bar charts)
+This outputs a Markdown comparison matrix directly to the console, regenerates [`saved_models/comparison_table.csv`](saved_models/comparison_table.csv), and saves the visualization chart to [`saved_models/model_comparison.png`](saved_models/model_comparison.png).
 
 ---
 
-## 🎨 Interactive Drawing Web App (Deliverable 5 - Student 4)
+## 👥 Team Contributions & Ownership
 
-Launch the interactive web application to draw handwritten digits and perform real-time model inference:
+Developed as **Assignment 1** by a team of 4 students with modular file ownership:
 
-```bash
-streamlit run app.py
-```
+| Student | GitHub Handle | Primary Code Ownership | Responsibilities |
+| :--- | :--- | :--- | :--- |
+| **Student 1** | [@abuelmagd2oo5-svg](https://github.com/abuelmagd2oo5-svg) | `src/data_loader.py`<br/>`src/train_classical.py` | Data normalization, stratified splitting, Classical ML modeling (SVM / RF), hyperparameter optimization via `GridSearchCV`. |
+| **Student 2** | [@M0L0TFY](https://github.com/M0L0TFY) | `src/train_mlp.py` | Deep Multilayer Perceptron architecture (strictly Dense layers), Batch Normalization, Dropout regularization, learning rate scheduling. |
+| **Student 3** | [@Mohamxd777](https://github.com/Mohamxd777) | `src/train_cnn.py`<br/>`src/evaluate_models.py` | Introductory 2D CNN design, uniform cross-model evaluation framework (Accuracy, F1, Latency, Complexity), benchmark matrix generation. |
+| **Student 4** | [@saraasawy](https://github.com/saraasawy) | `src/image_utils.py`<br/>`app.py` | Canvas stroke extraction, aspect-preserving 20×20 bounding box centering, Streamlit UI/UX design, simultaneous multi-model integration. |
 
-### Features:
-- **Interactive Canvas:** Draw freehand digits with customizable brush width.
-- **Model Selector:** Instantly toggle between Classical ML, MLP, and CNN.
-- **MNIST Preprocessing Visualization:** View the 28x28 normalized, center-of-mass aligned image the model receives.
-- **Confidence Metrics & Probability Charts:** Bar chart visualizing probability distribution across digits $0$ through $9$.
-- **Clear Canvas:** One-click reset for rapid testing.
+For detailed branch guidelines and task breakdowns, refer to [TEAM_TASKS.md](TEAM_TASKS.md).  
+For the academic report scaffold, refer to [REPORT_TEMPLATE.md](REPORT_TEMPLATE.md).
 
 ---
 
-## 🌿 Team Collaboration & Git Feature Branches
+## 📄 License
 
-To ensure zero merge conflicts, 4 isolated branches were created off `main` for each team member:
-1. `abuelmagd2oo5-svg-ml` (@abuelmagd2oo5-svg: `data_loader.py`, `train_classical.py`)
-2. `M0L0TFY-nn` (@M0L0TFY: `train_mlp.py`)
-3. `Mohamxd777-dl` (@Mohamxd777: `train_cnn.py`, `evaluate_models.py`)
-4. `saraasawy-frontend` (@saraasawy: `image_utils.py`, `app.py`)
-
-For branch guidelines, pull request protocols, and report distribution, consult [TEAM_TASKS.md](TEAM_TASKS.md).  
-For the report deliverable structure, refer to [REPORT_TEMPLATE.md](REPORT_TEMPLATE.md).
+This project is licensed under the [MIT License](LICENSE) — see the LICENSE file for details.
